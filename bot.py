@@ -1,5 +1,6 @@
 import os
 import base64
+import asyncio
 from typing import Optional
 
 import aiohttp
@@ -78,7 +79,6 @@ async def ask_gemini(
 
 
 def trim_discord(text: str, limit: int = 1900) -> list[str]:
-    """Split a response into Discord-safe chunks without exceeding the limit."""
     if len(text) <= limit:
         return [text]
 
@@ -87,16 +87,13 @@ def trim_discord(text: str, limit: int = 1900) -> list[str]:
         if len(text) <= limit:
             chunks.append(text)
             break
-
         cut = text.rfind("\n", 0, limit)
         if cut < 500:
             cut = text.rfind(" ", 0, limit)
         if cut < 500:
             cut = limit
-
         chunks.append(text[:cut])
         text = text[cut:].lstrip()
-
     return chunks
 
 
@@ -119,12 +116,10 @@ async def solve_request(
         if image.size > MAX_IMAGE_BYTES:
             await interaction.followup.send("That image is over 8 MB. Please upload a smaller screenshot.")
             return
-
         mime_type = image.content_type or "image/png"
         if mime_type not in {"image/png", "image/jpeg", "image/webp"}:
             await interaction.followup.send("Please attach a PNG, JPEG, or WebP image.")
             return
-
         image_bytes = await image.read()
 
     try:
